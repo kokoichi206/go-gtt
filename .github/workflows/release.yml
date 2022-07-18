@@ -1,0 +1,72 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.x
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Create Body
+        id: create-body
+        run: |
+          feature=()
+          bugfix=()
+          maintenance=()
+          tag1=`git tag | tail -n1`
+          tag2=`git tag | tail -n2 | awk 'NR==1'`
+          # Commits list
+          commits=`git log ${tag2}..${tag1} --oneline --no-merges`
+          while read commit
+          do
+            if [[ "$commit" =~ .*(feat|add).* ]]; then
+              feature+=( "$commit" )
+            elif [[ "$commit" =~ .*(bug|fix).* ]]; then
+              bugfix+=( "$commit" )
+            else
+              maintenance+=( "$commit" )
+            fi
+          done <<< "$commits"
+          body="## 👊 Features\n"
+          for feat in "${feature[@]}"; do
+            body+="* $feat\n"
+          done
+          body+="## 🐛 Bugfix\n"
+          for fix in "${bugfix[@]}"; do
+            body+="* $fix\n"
+          done
+          body+="## 🌴 Maintenance\n"
+          for maint in "${maintenance[@]}"; do
+            body+="* $maint\n"
+          done
+          echo "::set-output name=body::$(echo ${body})"
+
+      - name: Create release-notes
+        run: |
+          owner_repo="${{ github.repository }}" # owner/repo
+          tag_name="${{ steps.version-head-ref.outputs.full }}"
+          body="${{ steps.create-body.outputs.body }}"
+          curl \
+            -X POST \
+            -H "Authorization:token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "tag_name": "'"v$tag_name"'",
+              "name": "'"v$tag_name"'",
+              "body": "'"$body"'",
+              "draft": false,
+              "generate_release_notes": true,
+              "prerelease": true
+            }' \
+            https://api.github.com/repos/${owner_repo}/releases
