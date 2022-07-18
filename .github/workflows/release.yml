@@ -2,14 +2,16 @@ name: release
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: setup go
         uses: actions/setup-go@v3
@@ -20,59 +22,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create Body
-        id: create-body
+      - name: Install goreleaser
         run: |
-          feature=()
-          bugfix=()
-          maintenance=()
-          git tag
-          tag1=`git tag | tail -n1`
-          tag2=`git tag | tail -n2 | awk 'NR==1'`
-          # for debug
-          echo ${tag1}
-          echo ${tag2}
-          # Commits list
-          commits=`git log ${tag2}..${tag1} --oneline --no-merges`
-          while read commit
-          do
-            if [[ "$commit" =~ .*(feat|add).* ]]; then
-              feature+=( "$commit" )
-            elif [[ "$commit" =~ .*(bug|fix).* ]]; then
-              bugfix+=( "$commit" )
-            else
-              maintenance+=( "$commit" )
-            fi
-          done <<< "$commits"
-          body="## 👊 Features\n"
-          for feat in "${feature[@]}"; do
-            body+="* $feat\n"
-          done
-          body+="## 🐛 Bugfix\n"
-          for fix in "${bugfix[@]}"; do
-            body+="* $fix\n"
-          done
-          body+="## 🌴 Maintenance\n"
-          for maint in "${maintenance[@]}"; do
-            body+="* $maint\n"
-          done
-          echo "::set-output name=body::$(echo ${body})"
+          # https://goreleaser.com/install/
+          brew install goreleaser
 
-      - name: Create release-notes
+      - name: Create release using goreleaser
         run: |
-          owner_repo="${{ github.repository }}" # owner/repo
-          tag_name=`git tag | tail -n1`
-          body="${{ steps.create-body.outputs.body }}"
-          curl \
-            -X POST \
-            -H "Authorization:token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -d '{
-              "tag_name": "'"$tag_name"'",
-              "name": "'"$tag_name"'",
-              "body": "'"$body"'",
-              "draft": false,
-              "generate_release_notes": true,
-              "prerelease": false
-            }' \
-            https://api.github.com/repos/${owner_repo}/releases
+          # https://goreleaser.com/quick-start/
+          goreleaser release
