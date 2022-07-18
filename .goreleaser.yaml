@@ -5,10 +5,15 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    # https://goreleaser.com/customization/build/
+    id: gtt
+    binary: gtt
     goos:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -X main.revision={{.ShortCommit}}
 archives:
   - replacements:
       darwin: Darwin

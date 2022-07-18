@@ -22,12 +22,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create release using goreleaser
+      - name: Install goreleaser
         run: |
           # https://goreleaser.com/install/
           brew install goreleaser
 
-      - name: Create release
+      - name: Create release using goreleaser
         run: |
           # https://goreleaser.com/quick-start/
           goreleaser release
