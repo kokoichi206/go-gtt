@@ -13,7 +13,7 @@ import (
 func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "generate",
-		Usage: "Clone/sync with a remote repository",
+		Usage: "Generate a module template",
 		Description: `
 	Generate a template module directory. If the folder name already
 	exists, nothing will happen unless '-f' ('--force') flag is supplied.
