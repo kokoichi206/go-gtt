@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/kokoichi206/go-gtt/cmd"
 	"github.com/urfave/cli/v2"
 )
 
@@ -24,8 +25,9 @@ func main() {
 
 func newApp() *cli.App {
 	return &cli.App{
-		Name:    "gtt",
-		Usage:   "generate terraform template",
-		Version: fmt.Sprintf("%s (rev:%s)", version, revision),
+		Name:     "gtt",
+		Usage:    "generate terraform template",
+		Version:  fmt.Sprintf("%s (rev:%s)", version, revision),
+		Commands: cmd.NewCommands(),
 	}
 }

@@ -4,16 +4,13 @@ on:
   pull_request:
 
 jobs:
-  ci:
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: ["1.16", "1.18"]
     steps:
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go }}
+          go-version: "1.18"
       - name: checkout
         uses: actions/checkout@v3
       - name: Format check
@@ -23,5 +20,23 @@ jobs:
           fi
       - name: Lint
         run: go vet ./...
+
+  test:
+    needs: [lint]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go: ["1.16", "1.18"]
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+    steps:
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - name: checkout
+        uses: actions/checkout@v3
       - name: Testing
         run: go test ./...
